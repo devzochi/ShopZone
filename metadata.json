@@ -1,0 +1,6 @@
+{
+  "name": "CommerceOS",
+  "description": "Precision minimalist commerce with Gemini AI shopping assistant, search grounding, Firebase auth & admin dashboard.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
