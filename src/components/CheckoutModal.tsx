@@ -1,9 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { X, CheckCircle2, ShieldCheck, CreditCard, Truck, Lock, Sparkles } from 'lucide-react';
+import React, { useState } from 'react';
+import { X, CheckCircle2, CreditCard, Truck, Lock } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { CartItem, Order } from '../types';
-import { useAuth } from '../context/AuthContext';
-import { createOrderInFirestore } from '../lib/firestoreStore';
+import { CartItem } from '../types';
 
 interface CheckoutModalProps {
   isOpen: boolean;
@@ -18,7 +16,6 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   items,
   onOrderCompleted,
 }) => {
-  const { user, userProfile } = useAuth();
   const [step, setStep] = useState<'details' | 'payment' | 'success'>('details');
   const [placedOrderId, setPlacedOrderId] = useState<string>('');
 
@@ -36,22 +33,6 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   });
   const [isProcessing, setIsProcessing] = useState(false);
 
-  useEffect(() => {
-    if (userProfile || user) {
-      const parts = (userProfile?.displayName || user?.displayName || 'Alex Morgan').split(' ');
-      setFormData((prev) => ({
-        ...prev,
-        firstName: parts[0] || 'Valued',
-        lastName: parts.slice(1).join(' ') || 'Customer',
-        email: user?.email || prev.email,
-        address: userProfile?.address?.street || prev.address,
-        city: userProfile?.address?.city || prev.city,
-        state: userProfile?.address?.state || prev.state,
-        zip: userProfile?.address?.zip || prev.zip,
-      }));
-    }
-  }, [user, userProfile, isOpen]);
-
   if (!isOpen) return null;
 
   const subtotal = items.reduce((acc, item) => acc + item.product.price * item.quantity, 0);
@@ -63,44 +44,10 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
     setStep('payment');
   };
 
-  const handlePlaceOrder = async () => {
+  const handlePlaceOrder = () => {
     setIsProcessing(true);
     const orderId = `COS-${Math.floor(10000 + Math.random() * 90000)}`;
     setPlacedOrderId(orderId);
-
-    const newOrder: Order = {
-      id: orderId,
-      userId: user?.uid,
-      customerName: `${formData.firstName} ${formData.lastName}`,
-      customerEmail: formData.email,
-      items: items.map((i) => ({
-        productId: i.product.id,
-        name: i.product.name,
-        price: i.product.price,
-        quantity: i.quantity,
-        image: i.product.image,
-        selectedColor: i.selectedColor,
-      })),
-      totalAmount: total,
-      subtotal,
-      shipping,
-      status: 'processing',
-      paymentMethod: 'Credit Card (•••• 4242)',
-      shippingAddress: {
-        fullName: `${formData.firstName} ${formData.lastName}`,
-        street: formData.address,
-        city: formData.city,
-        state: formData.state,
-        zip: formData.zip,
-      },
-      createdAt: new Date().toISOString(),
-    };
-
-    try {
-      await createOrderInFirestore(newOrder);
-    } catch (e) {
-      console.error(e);
-    }
 
     setTimeout(() => {
       setIsProcessing(false);
@@ -321,7 +268,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                   className="flex-1 bg-[#b93815] hover:bg-[#a03012] disabled:opacity-50 text-white font-semibold py-3.5 rounded-xl transition text-sm shadow-xs flex items-center justify-center gap-2 cursor-pointer"
                 >
                   {isProcessing ? (
-                    <span>Placing order in Firestore...</span>
+                    <span>Confirming your order...</span>
                   ) : (
                     <span>Pay ${total.toFixed(2)} & Place Order</span>
                   )}
@@ -342,8 +289,8 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
               <div className="bg-neutral-50 rounded-2xl p-5 my-6 text-left space-y-2 text-xs text-neutral-600 border border-neutral-100">
                 <p><strong className="text-neutral-900">Recipient:</strong> {formData.firstName} {formData.lastName}</p>
                 <p><strong className="text-neutral-900">Destination:</strong> {formData.address}, {formData.city}, {formData.state} {formData.zip}</p>
-                <p><strong className="text-neutral-900">Confirmation Sent To:</strong> {formData.email}</p>
-                <p><strong className="text-neutral-900">Status:</strong> Processing in Firestore (Live Tracking in Your Account)</p>
+                <p><strong className="text-neutral-900">Email:</strong> {formData.email}</p>
+                <p><strong className="text-neutral-900">Status:</strong> Order received — this is a front-end checkout demonstration.</p>
               </div>
 
               <button
